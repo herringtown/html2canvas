@@ -69,12 +69,24 @@ _html2canvas.Renderer.Canvas = function(options) {
     newCanvas,
     bounds,
     fstyle,
+    scaleX = 1,
+    scaleY = 1,
     zStack = parsedData.stack;
 
     canvas.width = canvas.style.width =  options.width || zStack.ctx.width;
     canvas.height = canvas.style.height = options.height || zStack.ctx.height;
 
     fstyle = ctx.fillStyle;
+    if (options.scale) {
+      if (!isNaN(options.scale)) {
+        scaleX = scaleY = options.scale;
+      } else {
+        scaleX = options.scale.x;
+        scaleY = options.scale.y;
+      }
+      ctx.scale(scaleX, scaleY);
+    }
+
     ctx.fillStyle = (Util.isTransparent(parsedData.backgroundColor) && options.background !== undefined) ? options.background : parsedData.backgroundColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = fstyle;
@@ -111,12 +123,12 @@ _html2canvas.Renderer.Canvas = function(options) {
         // crop image to the bounds of selected (single) element
         bounds = _html2canvas.Util.Bounds(options.elements[0]);
         newCanvas = document.createElement('canvas');
-        newCanvas.width = Math.ceil(bounds.width);
-        newCanvas.height = Math.ceil(bounds.height);
+        newCanvas.width = Math.ceil(bounds.width*scaleX);
+        newCanvas.height = Math.ceil(bounds.height*scaleY);
         ctx = newCanvas.getContext("2d");
 
-		var imgData = canvas.getContext("2d").getImageData(bounds.left, bounds.top, bounds.width, bounds.height);
-		ctx.putImageData(imgData, 0, 0);
+        var imgData = canvas.getContext("2d").getImageData(bounds.left*scaleX, bounds.top*scaleY, bounds.width*scaleX, bounds.height*scaleY);
+        ctx.putImageData(imgData, 0, 0);
 
         canvas = null;
         return newCanvas;

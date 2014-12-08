@@ -1,6 +1,6 @@
 /*
   html2canvas 0.4.1 <http://html2canvas.hertzen.com>
-  Copyright (c) 2013 Niklas von Hertzen
+  Copyright (c) 2014 Niklas von Hertzen
 
   Released under MIT License
 */
@@ -1714,9 +1714,19 @@ _html2canvas.Parse = function (images, options, cb) {
     brh = borderRadius[2][0],
     brv = borderRadius[2][1],
     blh = borderRadius[3][0],
-    blv = borderRadius[3][1],
+    blv = borderRadius[3][1];
 
-    topWidth = width - trh,
+    var halfHeight = Math.floor(height / 2);
+    tlh = tlh > halfHeight ? halfHeight : tlh;
+    tlv = tlv > halfHeight ? halfHeight : tlv;
+    trh = trh > halfHeight ? halfHeight : trh;
+    trv = trv > halfHeight ? halfHeight : trv;
+    brh = brh > halfHeight ? halfHeight : brh;
+    brv = brv > halfHeight ? halfHeight : brv;
+    blh = blh > halfHeight ? halfHeight : blh;
+    blv = blv > halfHeight ? halfHeight : blv;
+
+    var topWidth = width - trh,
     rightHeight = height - brv,
     bottomWidth = width - brh,
     leftHeight = height - blv;
@@ -2947,12 +2957,24 @@ _html2canvas.Renderer.Canvas = function(options) {
     newCanvas,
     bounds,
     fstyle,
+    scaleX = 1,
+    scaleY = 1,
     zStack = parsedData.stack;
 
     canvas.width = canvas.style.width =  options.width || zStack.ctx.width;
     canvas.height = canvas.style.height = options.height || zStack.ctx.height;
 
     fstyle = ctx.fillStyle;
+    if (options.scale) {
+      if (!isNaN(options.scale)) {
+        scaleX = scaleY = options.scale;
+      } else {
+        scaleX = options.scale.x;
+        scaleY = options.scale.y;
+      }
+      ctx.scale(scaleX, scaleY);
+    }
+
     ctx.fillStyle = (Util.isTransparent(parsedData.backgroundColor) && options.background !== undefined) ? options.background : parsedData.backgroundColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = fstyle;
@@ -2989,11 +3011,13 @@ _html2canvas.Renderer.Canvas = function(options) {
         // crop image to the bounds of selected (single) element
         bounds = _html2canvas.Util.Bounds(options.elements[0]);
         newCanvas = document.createElement('canvas');
-        newCanvas.width = Math.ceil(bounds.width);
-        newCanvas.height = Math.ceil(bounds.height);
+        newCanvas.width = Math.ceil(bounds.width*scaleX);
+        newCanvas.height = Math.ceil(bounds.height*scaleY);
         ctx = newCanvas.getContext("2d");
 
-        ctx.drawImage(canvas, bounds.left, bounds.top, bounds.width, bounds.height, 0, 0, bounds.width, bounds.height);
+        var imgData = canvas.getContext("2d").getImageData(bounds.left*scaleX, bounds.top*scaleY, bounds.width*scaleX, bounds.height*scaleY);
+        ctx.putImageData(imgData, 0, 0);
+
         canvas = null;
         return newCanvas;
       }
@@ -3002,4 +3026,5 @@ _html2canvas.Renderer.Canvas = function(options) {
     return canvas;
   };
 };
+
 })(window,document);
